@@ -2,13 +2,15 @@
 
 ExamForge is a secure, robust authentication system featuring Email/Password registration, One-Time Password (OTP) multi-factor verification, and Google OAuth integration. Designed for seamless deployment on cloud networks like Render without port or domain restrictions.
 
+🔗 **Live Frontend Application:** [https://examforge-peach.vercel.app/](https://examforge-peach.vercel.app/)
+
 ## 🚀 Features
 
 - **Hybrid Authentication:** Supports traditional Email/Password login, Google OAuth, or a linked combination of both.
 - **Secure OTP Verification:** Generates time-sensitive (10-minute expiry) OTP tokens for secure logins via the Brevo HTTP API.
 - **Institutional Role-Based Routing:** Automatically checks the domain of the email address during registration to assign permissions and control frontend dashboard redirection:
-  - 🔑 Emails ending with `@iitr.ac.in` $\rightarrow$ Assigned **`admin`** role.
-  - 🎓 All other email domains $\rightarrow$ Assigned **`student`** role.
+  - 🔑 Emails ending with `@iitr.ac.in` $\rightarrow$ Assigned **`admin`** role (Redirects to Admin Panel).
+  - 🎓 All other email domains $\rightarrow$ Assigned **`student`** role (Redirects to Student Exam Dashboard).
 
 ---
 
