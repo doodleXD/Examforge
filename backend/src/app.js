@@ -7,7 +7,8 @@ const app = express();
 app.set('trust proxy', 1);
 // Add this log so we can spy on Render's brain
 console.log("Render sees this FRONTEND_URL string:", process.env.FRONTEND_URL);
-
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 app.use(cors({
   // Hardcoding both URLs directly into the array
   origin: [
