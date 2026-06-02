@@ -29,7 +29,6 @@ function JoinRedirect() {
       // Save synchronously FIRST before any navigation
       try {
         localStorage.setItem('examforge-redirect-code', code);
-        console.log('Saved code:', localStorage.getItem('examforge-redirect-code'));
       } catch (e) {
         console.error('localStorage failed:', e);
       }

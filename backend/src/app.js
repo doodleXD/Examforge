@@ -13,8 +13,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
 app.use('/api/student', require('./routes/studentRoutes'));
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'ExamForge API is awake!' });
+});
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 

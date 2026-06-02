@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import axios from 'axios';
 
 export const createExamApi = (data) => axiosInstance.post('/api/admin/exams', data);
 export const getMyExamsApi = () => axiosInstance.get('/api/admin/exams');
@@ -12,3 +13,11 @@ export const deleteQuestionApi = (id) => axiosInstance.delete(`/api/admin/questi
 export const getResultsApi = (examId) => axiosInstance.get(`/api/admin/exams/${examId}/results`);
 export const overrideScoreApi = (answerId, score) => axiosInstance.put(`/api/admin/answers/${answerId}/override`, { score });
 export const exportResultsApi = (examId) => `${import.meta.env.VITE_API_URL}/api/admin/exams/${examId}/export`;
+
+// Add this next to your other api functions
+export const extractQuestionApi = async (formData) => {
+  // Assuming your axios instance is called 'api' or 'adminAxios'
+  return await axiosInstance.post('/api/admin/questions/extract', formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};

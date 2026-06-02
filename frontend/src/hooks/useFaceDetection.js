@@ -30,7 +30,6 @@ const useFaceDetection = ({
       try {
         const MODEL_URL = window.location.origin + "/models";
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-        console.log("Face detection models loaded!");
         setModelsLoaded(true);
       } catch (err) {
         console.error("Model load failed:", err);
@@ -95,7 +94,6 @@ const useFaceDetection = ({
           // 1. Voice frequencies are loud enough (> 35)
           // 2. Voice frequencies are dominant over all frequencies (ratio > 1.3)
           const isVoice = voiceAvg > 85 && voiceRatio > 2.0;
-          console.log('voiceAvg:', voiceAvg.toFixed(1), 'allAvg:', allAvg.toFixed(1), 'ratio:', voiceRatio.toFixed(2), 'isVoice:', isVoice);
 
           if (isVoice) {
             cumulativeNoiseSeconds += 5;

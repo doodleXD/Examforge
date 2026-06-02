@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import toast from "react-hot-toast";
+import axios from 'axios';
 import { useParams, useNavigate } from "react-router-dom";
 import {
   getExamByIdApi,
@@ -8,6 +9,7 @@ import {
   deleteQuestionApi,
   finalizeExamApi,
   deleteExamApi,
+  extractQuestionApi,
 } from "../../api/adminApi";
 import ConfirmModal from "../../components/ConfirmModal";
 
@@ -38,6 +40,9 @@ export default function ManageQuestions() {
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
   const [isDeletingQuestion, setIsDeletingQuestion] = useState(false); 
+  const fileInputRef = useRef(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [scannedQuestions, setScannedQuestions] = useState([]);
 
 
   // ── Handle Entire Exam Deletion ────────────────────────────────
@@ -133,12 +138,85 @@ export default function ManageQuestions() {
       setEditingId(null);
       fetchExam();
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to update question");
+      toast.error(err.response?.data?.message || "Failed to update question");
     } finally {
       setSaving(false);
     }
   };
 
+const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsExtracting(true);
+    toast.loading("AI is scanning your document...", { id: 'ai-scan' });
+
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+
+      const response = await extractQuestionApi(formData);
+      const extracted = response.data.extractedQuestions;
+
+      if (!Array.isArray(extracted) || extracted.length === 0) {
+        toast.error("No questions found in document.", { id: 'ai-scan' });
+        return;
+      }
+
+      if (extracted.length === 1) {
+        // Single question — auto-fill the form
+        setForm(prev => ({
+          ...prev,
+          questionText: extracted[0].question || "",
+          modelAnswer: extracted[0].modelAnswer || "",
+        }));
+        toast.success("Question extracted! Fill in the marks and add it.", { id: 'ai-scan' });
+
+      } else {
+        // Multiple questions — bulk add them
+        toast.loading(`Adding ${extracted.length} questions...`, { id: 'ai-scan' });
+        const validQuestions = extracted.filter(q => q.question?.trim());
+
+        if (validQuestions.length > 0) {
+          
+          // 1. Grab the real marks directly from the exam object
+          const totalMarks = Number(exam.totalMarks); 
+          
+          // 2. Safety Check: If the total marks are 0, missing, or NaN, stop the upload!
+          if (!totalMarks || totalMarks <= 0) {
+            toast.error("Error: Please ensure the exam has a total marks value set.", { id: 'ai-scan' });
+            setIsExtracting(false);
+            return;
+          }
+
+          // 3. The Math: Divide evenly and limit to 2 decimal places to prevent DB errors
+          const marksPerQuestion = Number((totalMarks / validQuestions.length).toFixed(2));
+
+          // 4. Save to database concurrently
+          await Promise.all(
+            validQuestions.map(q => 
+              addQuestionApi(id, {
+                questionText: q.question.trim(),
+                modelAnswer: q.modelAnswer?.trim() || "",
+                marks: marksPerQuestion, // 👈 Beautifully divided marks applied here!
+              })
+            )
+          );
+
+          fetchExam();
+          toast.success(`${validQuestions.length} questions added successfully!`, { id: 'ai-scan' });
+        }
+      }
+
+    } catch (err) {
+      console.error("Extraction error:", err);
+      const msg = err.response?.data?.message || "Failed to read document.";
+      toast.error(msg, { id: 'ai-scan' });
+    } finally {
+      setIsExtracting(false);
+      e.target.value = null;
+    }
+  };
   const handleFinalize = async () => {
     // 1. Guardrail: Don't finalize an empty exam!
     if (!exam?.questions?.length) {
@@ -213,6 +291,37 @@ export default function ManageQuestions() {
 
         {/* Right Side Actions: Delete, Finalize, or View Results */}
         <div className="flex items-center gap-3">
+
+          {/* ── AI MAGIC SCAN BUTTON START ── */}
+          {/* 1. The hidden file input */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+
+          {/* 2. The visible button */}
+          <button
+            onClick={() => fileInputRef.current.click()}
+            disabled={isExtracting}
+            className="flex items-center gap-2 bg-purple-100 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-200 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            {isExtracting ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-purple-700" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Scanning...
+              </>
+            ) : (
+              "Upload question & answer image"
+            )}
+          </button>
+          {/* ── AI MAGIC SCAN BUTTON END ── */}
+
           {/* Delete Button (Always Visible) */}
           <button
             onClick={() => setIsDeleteModalOpen(true)} //  Changed to open modal
@@ -223,10 +332,9 @@ export default function ManageQuestions() {
           </button>
 
           {/* Finalize Button (Visible only if Draft) */}
-          {/* Finalize Button (Visible only if Draft) */}
           {isDraft && (
             <button
-              onClick={() => setIsFinalizeModalOpen(true)} // 👈 Changed to open modal
+              onClick={() => setIsFinalizeModalOpen(true)} //  Changed to open modal
               disabled={isGenerating}
               className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >

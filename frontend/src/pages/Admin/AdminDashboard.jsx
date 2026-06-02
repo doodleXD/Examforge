@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import toast from 'react-hot-toast';
 import { useNavigate } from "react-router-dom";
 import { getMyExamsApi, deleteExamApi } from "../../api/adminApi";
 import useAuthStore from "../../store/authStore";
@@ -10,7 +11,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
+  const [examToDelete, setExamToDelete] = useState(null);
+
   const fetchExams = async () => {
     try {
       const res = await getMyExamsApi();
@@ -29,14 +31,29 @@ export default function AdminDashboard() {
     fetchExams();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this exam?")) return;
+  // 1. This just opens the modal when they click the trash can
+  const handleDeleteClick = (id) => {
+    setExamToDelete(id);
+  };
+
+  // 2. This runs when they click "Yes, Delete" inside the new modal
+  const confirmDelete = async () => {
+    if (!examToDelete) return;
+    
+    const id = examToDelete;
+    setExamToDelete(null); // Instantly close the modal
+    
     setDeletingId(id);
+    toast.loading("Deleting exam...", { id: 'delete-toast' });
+
     try {
       await deleteExamApi(id);
       setExams(exams.filter((e) => e.id !== id));
+      toast.success("Exam deleted successfully!", { id: 'delete-toast' });
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete");
+      console.error("Delete error:", err);
+      const msg = err.response?.data?.message || "Failed to delete exam.";
+      toast.error(msg, { id: 'delete-toast' });
     } finally {
       setDeletingId(null);
     }
@@ -143,7 +160,7 @@ export default function AdminDashboard() {
 
                   {/* Delete — always visible */}
                   <button
-                    onClick={() => handleDelete(exam.id)}
+                    onClick={() => handleDeleteClick(exam.id)}
                     disabled={deletingId === exam.id}
                     className="border border-red-200 text-red-500 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-50 transition disabled:opacity-50 flex items-center gap-2"
                   >
@@ -195,6 +212,33 @@ export default function AdminDashboard() {
         )}
         {isLoggingOut ? 'Logging out...' : 'Logout'}
       </button>
+
+      {/* --- MODERN CONFIRMATION MODAL --- */}
+      {examToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4 animate-fade-in">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Exam?</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this exam? This action cannot be undone and all questions will be lost.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setExamToDelete(null)}
+                className="px-4 py-2 font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
     </div>
   );
 }
