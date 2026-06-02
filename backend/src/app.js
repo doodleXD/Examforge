@@ -5,27 +5,17 @@ require('./config/passport');
 
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:5173',                   // Local development
-  'https://examforge-peach.vercel.app'       // Production frontend
-];
+// Add this log so we can spy on Render's brain
+console.log("Render sees this FRONTEND_URL string:", process.env.FRONTEND_URL);
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.FRONTEND_URL === origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  // Hardcoding both URLs directly into the array
+  origin: [
+    'http://localhost:5173', 
+    'https://examforge-peach.vercel.app'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
