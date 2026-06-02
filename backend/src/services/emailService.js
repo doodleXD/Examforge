@@ -1,22 +1,11 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // Let Nodemailer automatically figure out the best host/port
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-  family: 4, // Keep the IPv4 fix!
-  tls: {
-    rejectUnauthorized: false // Bypasses strict SSL handshake freezes on cloud servers
-  },
-  connectionTimeout: 10000 
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOtpEmail = async (email, otp) => {
   try {
-    await transporter.sendMail({
-      from: `"ExamForge" <${process.env.GMAIL_USER}>`,
+    const data = await resend.emails.send({
+      from: 'ExamForge <onboarding@resend.dev>', 
       to: email,
       subject: 'Your ExamForge OTP Code',
       html: `
