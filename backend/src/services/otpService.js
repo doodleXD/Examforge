@@ -18,9 +18,10 @@ const generateOtp = async (userId) => {
 };
 
 const verifyOtp = async (userId, submittedOtp) => {
-  const otpRecord = await prisma.otp.findFirst({
-    where: { userId, used: false }
-  });
+const otpRecord = await prisma.otp.findFirst({
+  where: { userId, used: false },
+  orderBy: { createdAt: 'desc' } // 👈 ADD THIS LINE! (Assuming you have a createdAt field)
+});
 
   if (!otpRecord) return { success: false, message: 'OTP not found' };
   if (new Date() > otpRecord.expiresAt) return { success: false, message: 'OTP expired' };

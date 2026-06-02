@@ -13,23 +13,24 @@ const register = async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email } });
 
     if (existing) {
-      // ✅ If user exists via Google, allow them to add a password
       if (existing.authProvider === 'google') {
         const passwordHash = await bcrypt.hash(password, 10);
         await prisma.user.update({
           where: { email },
           data: {
             passwordHash,
-            authProvider: 'both', // can now login via both
+            authProvider: 'both', 
           }
         });
         const otp = await generateOtp(existing.id);
-        await sendOtpEmail(email, otp);
-        res.json({ message: 'OTP sent to email', userId: existing.id, role: existing.role });
+        
+        //   No 'await'
+        sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
+        
+        return res.status(200).json({ message: 'OTP sent to email', userId: existing.id, role: existing.role });
       } else {
         return res.status(400).json({ message: 'Email already registered. Please login.' });
       }
-      return;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -38,14 +39,15 @@ const register = async (req, res) => {
     });
 
     const otp = await generateOtp(user.id);
-    await sendOtpEmail(email, otp);
+    
+    //   No 'await'
+    sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
 
-    res.json({ message: 'OTP sent to email', userId: user.id, role });
+    res.status(200).json({ message: 'OTP sent to email', userId: user.id, role });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // Login
 const login = async (req, res) => {
@@ -55,7 +57,6 @@ const login = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ✅ Allow login if authProvider is 'email' or 'both'
     if (user.authProvider === 'google') {
       return res.status(400).json({ message: 'This account uses Google login. Please use Google to sign in.' });
     }
@@ -64,13 +65,16 @@ const login = async (req, res) => {
     if (!isMatch) return res.status(401).json({ message: 'Invalid password' });
 
     const otp = await generateOtp(user.id);
-    await sendOtpEmail(email, otp);
+    
+    //   No 'await'
+    sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
 
-    res.json({ message: 'OTP sent to email', userId: user.id, role: user.role });
+    res.status(200).json({ message: 'OTP sent to email', userId: user.id, role: user.role });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // Verify OTP
 const verifyOtpController = async (req, res) => {
@@ -128,9 +132,11 @@ const resendOtp = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const otp = await generateOtp(user.id);
-    await sendOtpEmail(user.email, otp);
+    
+    //   No 'await'
+    sendOtpEmail(user.email, otp).catch(err => console.error("Email Error:", err));
 
-    res.json({ message: 'OTP resent' });
+    res.status(200).json({ message: 'OTP resent' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
