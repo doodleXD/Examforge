@@ -13,19 +13,20 @@ const register = async (req, res) => {
     const existing = await prisma.user.findUnique({ where: { email } });
 
     if (existing) {
+      // ✅ If user exists via Google, allow them to add a password
       if (existing.authProvider === 'google') {
         const passwordHash = await bcrypt.hash(password, 10);
         await prisma.user.update({
           where: { email },
           data: {
             passwordHash,
-            authProvider: 'both', 
+            authProvider: 'both', // can now login via both
           }
         });
         const otp = await generateOtp(existing.id);
         
-        //   No 'await'
-        sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
+        // 🛑 AWAIT: Confirms email is sent before giving success to frontend
+        await sendOtpEmail(email, otp);
         
         return res.status(200).json({ message: 'OTP sent to email', userId: existing.id, role: existing.role });
       } else {
@@ -40,12 +41,13 @@ const register = async (req, res) => {
 
     const otp = await generateOtp(user.id);
     
-    //   No 'await'
-    sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
+    // 🛑 AWAIT: Confirms email is sent before giving success to frontend
+    await sendOtpEmail(email, otp);
 
     res.status(200).json({ message: 'OTP sent to email', userId: user.id, role });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("🚨 Register Error:", err.message);
+    res.status(500).json({ message: err.message || 'Failed to send registration OTP.' });
   }
 };
 
@@ -57,6 +59,7 @@ const login = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    // ✅ Allow login if authProvider is 'email' or 'both'
     if (user.authProvider === 'google') {
       return res.status(400).json({ message: 'This account uses Google login. Please use Google to sign in.' });
     }
@@ -66,15 +69,15 @@ const login = async (req, res) => {
 
     const otp = await generateOtp(user.id);
     
-    //   No 'await'
-    sendOtpEmail(email, otp).catch(err => console.error("Email Error:", err));
+    // 🛑 AWAIT: If Resend fails, it jumps down to the catch block instantly
+    await sendOtpEmail(email, otp);
 
     res.status(200).json({ message: 'OTP sent to email', userId: user.id, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("🚨 Login Error:", err.message);
+    res.status(500).json({ message: err.message || 'Failed to send login OTP.' });
   }
 };
-
 
 // Verify OTP
 const verifyOtpController = async (req, res) => {
@@ -124,6 +127,7 @@ const verifyOtpController = async (req, res) => {
     res.status(500).json({ message: 'Internal server error during verification.' });
   }
 };
+
 // Resend OTP
 const resendOtp = async (req, res) => {
   try {
@@ -133,14 +137,16 @@ const resendOtp = async (req, res) => {
 
     const otp = await generateOtp(user.id);
     
-    //   No 'await'
-    sendOtpEmail(user.email, otp).catch(err => console.error("Email Error:", err));
+    // 🛑 AWAIT: Confirms resent email is accepted before telling the frontend
+    await sendOtpEmail(user.email, otp);
 
     res.status(200).json({ message: 'OTP resent' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("🚨 Resend OTP Error:", err.message);
+    res.status(500).json({ message: err.message || 'Failed to resend OTP.' });
   }
 };
+
 const googleCallback = (req, res) => {
   try {
     const user = req.user;
