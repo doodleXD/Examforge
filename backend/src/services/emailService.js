@@ -1,15 +1,16 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,             // 👈 CHANGED: 587 is often much more reliable on cloud servers
-  secure: false,         // 👈 CHANGED: Must be false for port 587 (it safely upgrades to TLS automatically)
+  service: 'gmail', // Let Nodemailer automatically figure out the best host/port
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS,
   },
-  family: 4,             // Keep the IPv4 fix!
-  connectionTimeout: 10000 // 👈 ADDED: Gives Render 10 full seconds to connect instead of dropping early
+  family: 4, // Keep the IPv4 fix!
+  tls: {
+    rejectUnauthorized: false // Bypasses strict SSL handshake freezes on cloud servers
+  },
+  connectionTimeout: 10000 
 });
 
 const sendOtpEmail = async (email, otp) => {
