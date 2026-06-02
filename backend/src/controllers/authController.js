@@ -77,19 +77,49 @@ const verifyOtpController = async (req, res) => {
   try {
     const { userId, otp } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    // 1. Safety Net: Ensure both fields actually exist before hitting the database
+    if (!userId || !otp) {
+      return res.status(400).json({ message: 'User ID and OTP are strictly required.' });
+    }
 
+    console.log(`Attempting OTP verification for user: ${userId}`);
+
+    // 2. Fetch user
+    const user = await prisma.user.findUnique({ 
+      where: { id: userId } 
+    });
+    
+    if (!user) {
+      console.log(`OTP Failed: User ${userId} not found in database.`);
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // 3. Verify the OTP
     const result = await verifyOtp(userId, otp);
-    if (!result.success) return res.status(400).json({ message: result.message });
+    if (!result.success) {
+      console.log(`OTP Failed: Invalid OTP for user ${userId}.`);
+      return res.status(400).json({ message: result.message || 'Invalid or expired OTP.' });
+    }
 
+    // 4. Generate Token & Send Success Response
     const token = generateToken(user.id, user.role, user.email);
-    res.json({ token, role: user.role, name: user.name, email: user.email });
+    
+    console.log(`OTP Success: User ${user.email} verified and logged in.`);
+    
+    res.status(200).json({ 
+      message: 'OTP verified successfully.',
+      token, 
+      role: user.role, 
+      name: user.name, 
+      email: user.email 
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    // 5. Explicit logging for your Render dashboard
+    console.error("🚨 CRASH IN VERIFY OTP CONTROLLER:", err);
+    res.status(500).json({ message: 'Internal server error during verification.' });
   }
 };
-
 // Resend OTP
 const resendOtp = async (req, res) => {
   try {
