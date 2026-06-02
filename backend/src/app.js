@@ -4,7 +4,7 @@ const passport = require('passport');
 require('./config/passport');
 
 const app = express();
-
+app.set('trust proxy', 1);
 // Add this log so we can spy on Render's brain
 console.log("Render sees this FRONTEND_URL string:", process.env.FRONTEND_URL);
 
