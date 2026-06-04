@@ -44,51 +44,13 @@ ExamForge is a secure, AI-powered examination platform featuring automated quest
 Before running this project locally, ensure you have the following installed:
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - [npm](https://www.npmjs.com/) 
-- A live relational database (PostgreSQL, MySQL, or Supabase instance)
+- A live relational database (PostgreSQL, MySQL, or Supabase/Neon instance)
 
 ---
 
-## ⚙️ Environment Variables
+## 📦 Installation & Setup
 
-Create a `.env` file in your root `/backend` folder and populate it with the following configurations. Ensure these matches are mirrored perfectly in your Render Dashboard:
-The Terminal Commands
-Run this first command in your /backend folder to install the main packages:
-
-Bash
-npm install express bcrypt jsonwebtoken @prisma/client cors dotenv
-Then, run this command to install the development tools:
-
-Bash
-npm install prisma nodemon --save-dev
-
-Prisma Client Setup
-Generate the Prisma client blueprints and sync them with your remote or local database:
-
-Bash
-npx prisma generate
-npx prisma db push
-
-Start the Server
-
-Bash
-npm run dev
-```env
-# Server Configuration
-PORT=5000
-
-# Database Connection (Prisma)
-DATABASE_URL="your_relational_database_connection_string"
-
-# JWT Token Security
-JWT_SECRET="your-64-char-random-hex-key"
-
-# Live Production Frontend Domain (No trailing slash)
-FRONTEND_URL="[https://examforge-peach.vercel.app](https://examforge-peach.vercel.app)"
-
-# Brevo Email API Configuration
-BREVO_API_KEY="your_brevo_api_key_here"
-SENDER_EMAIL="your_verified_brevo_gmail_address@gmail.com"
-
-# Google OAuth Credentials
-GOOGLE_CLIENT_ID="your_google_client_id"
-GOOGLE_CLIENT_SECRET="your_google_client_secret"
+1. **Clone the Repository**
+   ```bash
+   git clone [https://github.com/yourusername/examforge.git](https://github.com/yourusername/examforge.git)
+   cd examforge/backend
