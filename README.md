@@ -1,98 +1,160 @@
-# ExamForge 🎓
+# ExamForge
 
-> **A full-stack, AI-powered secure online examination platform with real-time proctoring, anti-cheating enforcement, and semantic answer evaluation.**
+A full-stack, AI-powered secure online examination platform with real-time proctoring, anti-cheating enforcement, and AI-powered answer evaluation and question extraction.
 
-Built as a solo final project. No external proctoring services — everything runs in the browser.
+**Live Demo:** [live link]
 
 ---
 
-## ✨ Features at a Glance
+## What Does It Do?
 
-| Category | Features |
+ExamForge lets teachers create and manage secure online exams, and students take them — with real-time webcam proctoring, anti-cheating enforcement, and AI-powered answer scoring. Admins can also upload images of question papers and have questions extracted automatically using AI.
+
+---
+
+## Features
+
+### For Admins (Teachers)
+- Create exams with title, subject, duration, and total marks
+- Add questions manually or by uploading an image of a question paper (AI extracts questions automatically)
+- Add model answers per question for AI scoring
+- Finalize exam and generate a unique `EF-XXXXXX` code valid for 24 hours
+- Share a one-click link that takes students directly to the exam
+- View all student submissions with AI scores, violations, and answers
+- Override AI scores manually per question
+- Export results as CSV
+
+### For Students
+- Join exam via code or shareable link
+- Pre-exam checklist (camera, microphone, single monitor, fullscreen, rules)
+- Timed exam interface with auto-save every 10 seconds
+- Digital whiteboard for rough work (not submitted)
+- Backend timer — refreshing the page does not reset the timer
+
+### Anti-Cheating
+
+| Mechanism | Trigger |
 |---|---|
-| **Authentication** | Email + OTP login, Google OAuth, role auto-detection by email domain |
-| **Admin** | Create exams, manage questions with model answers, generate 24hr exam codes, shareable links, results dashboard, CSV export, score override |
-| **Student** | Join via code or shareable link, pre-exam checklist, timed exam interface, digital whiteboard, auto-save |
-| **Proctoring** | Fullscreen enforcement, tab-switch detection, copy-paste prevention, back-navigation trap, screenshot blur, DevTools detection |
-| **Face Detection** | Real-time webcam face presence monitoring, multiple-face detection, audio detection |
-| **AI Scoring** | HuggingFace semantic similarity scoring with TF-IDF fallback |
+| Fullscreen enforcement | Exiting fullscreen = violation |
+| Tab / window switch | Any focus change = violation |
+| Copy-paste prevention | Ctrl+C, Ctrl+V, right-click blocked |
+| Back navigation trap | Browser back button = violation |
+| Screenshot blur | PrintScreen blurs screen for 3 seconds |
+| DevTools detection | Opening DevTools = violation |
+| Face absence | 20 cumulative seconds without face = violation |
+| Multiple faces | 2+ faces in camera = violation |
+| Audio detection | Sustained speaking for 15s = violation |
+| Auto-submit | After 3 violations, exam submits and is flagged |
+
+### AI Features
+- **Question extraction** — Upload an image of a question paper, Groq Vision extracts all questions automatically
+- **Answer evaluation** — Groq API evaluates student descriptive answers against model answers semantically
+- **Fallback** — TF-IDF cosine similarity if Groq API is unavailable
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
-| Tool | Purpose |
-|---|---|
-| React 18 + Vite | UI framework |
-| TailwindCSS | Styling |
-| React Router v6 | Client-side routing |
-| Zustand + persist | Auth state management |
-| Axios | API calls |
-| face-api.js | Client-side face detection |
-| react-hot-toast | Notifications |
+```
+React 18 + Vite        UI framework
+TailwindCSS            Styling
+React Router v6        Routing
+Zustand                Auth state with localStorage persistence
+Axios                  API calls
+face-api.js            Client-side face detection
+react-hot-toast        Toast notifications
+```
 
 ### Backend
-| Tool | Purpose |
-|---|---|
-| Node.js 20 + Express | REST API server |
-| Prisma ORM | Database queries |
-| PostgreSQL (Neon) | Primary database |
-| bcrypt | Password hashing |
-| jsonwebtoken | JWT auth |
-| Nodemailer + Gmail | OTP email delivery |
-| Passport.js | Google OAuth 2.0 |
-| express-rate-limit | Brute force protection |
-| natural | TF-IDF fallback scoring |
-| axios | HuggingFace API calls |
+```
+Node.js 20 + Express   REST API server
+Prisma ORM             Database queries and migrations
+PostgreSQL (Neon)      Primary database
+bcrypt                 Password hashing
+jsonwebtoken           JWT authentication
+Resend API             OTP email delivery
+Passport.js            Google OAuth 2.0
+express-rate-limit     Brute force protection
+natural                TF-IDF fallback scoring
+axios                  External API calls
+Groq SDK               AI answer evaluation + question extraction
+```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 examforge/
-├── frontend/                  # React + Vite app
+├── frontend/
 │   ├── public/
-│   │   └── models/            # face-api.js model files
+│   │   └── models/                    <- face-api.js model files go here
 │   └── src/
-│       ├── api/               # Axios API call functions
-│       ├── components/        # Reusable UI components
-│       ├── hooks/             # Custom React hooks
+│       ├── api/
+│       │   ├── axiosInstance.js
+│       │   ├── authApi.js
+│       │   ├── adminApi.js
+│       │   └── studentApi.js
+│       ├── components/
+│       │   ├── Whiteboard.jsx
+│       │   ├── WebcamPreview.jsx
+│       │   ├── Timer.jsx
+│       │   └── ViolationOverlay.jsx
+│       ├── hooks/
+│       │   └── useFaceDetection.js
 │       ├── pages/
-│       │   ├── Admin/         # Admin dashboard pages
-│       │   ├── Auth/          # Login, OTP, Google callback
-│       │   └── Student/       # Student exam pages
-│       └── store/             # Zustand auth store
+│       │   ├── Admin/
+│       │   │   ├── AdminDashboard.jsx
+│       │   │   ├── CreateExam.jsx
+│       │   │   ├── ManageQuestions.jsx
+│       │   │   └── ResultsDashboard.jsx
+│       │   ├── Auth/
+│       │   │   ├── LoginPage.jsx
+│       │   │   ├── OTPPage.jsx
+│       │   │   └── GoogleSuccess.jsx
+│       │   └── Student/
+│       │       ├── StudentDashboard.jsx
+│       │       ├── PreExamChecklist.jsx
+│       │       ├── ExamInterface.jsx
+│       │       └── SubmittedScreen.jsx
+│       └── store/
+│           └── authStore.js
 │
-└── backend/                   # Node.js + Express API
+└── backend/
     ├── prisma/
-    │   └── schema.prisma      # Database schema
+    │   └── schema.prisma
+    ├── server.js
     └── src/
-        ├── config/            # Passport Google OAuth config
-        ├── controllers/       # Business logic
-        ├── middleware/        # Auth guard, rate limiter
-        ├── routes/            # Express route definitions
-        ├── services/          # Email, OTP, AI evaluation
-        └── utils/             # JWT, code generator, Prisma client
+        ├── app.js
+        ├── config/
+        │   └── passport.js
+        ├── controllers/
+        │   ├── authController.js
+        │   └── adminController.js
+        ├── middleware/
+        │   ├── authMiddleware.js
+        │   └── rateLimiter.js
+        ├── routes/
+        │   ├── authRoutes.js
+        │   ├── adminRoutes.js
+        │   └── studentRoutes.js
+        ├── services/
+        │   ├── emailService.js        <- Resend API OTP delivery
+        │   ├── otpService.js
+        │   ├── evaluationService.js   <- Groq AI + TF-IDF scoring
+        │   └── examCodeService.js
+        └── utils/
+            ├── jwt.js
+            ├── codeGen.js
+            └── prismaClient.js
 ```
 
 ---
 
-## 🚀 Getting Started
+## Local Setup Guide
 
-### Prerequisites
-
-- Node.js v18+
-- npm
-- A free [Neon](https://neon.tech) PostgreSQL database
-- A Gmail account with App Password enabled
-- A free [HuggingFace](https://huggingface.co) account
-- A [Google Cloud](https://console.cloud.google.com) project with OAuth credentials
-
----
-
-### 1. Clone the Repository
+### Step 1 — Clone the Repository
 
 ```bash
 git clone https://github.com/yourusername/examforge.git
@@ -101,51 +163,65 @@ cd examforge
 
 ---
 
-### 2. Backend Setup
+### Step 2 — Backend Setup
 
 ```bash
 cd backend
 npm install
 ```
 
-Create `backend/.env`:
+#### Packages installed:
+```
+express cors dotenv bcrypt jsonwebtoken
+passport passport-google-oauth20
+@prisma/client prisma express-rate-limit
+axios natural groq-sdk resend
+```
+
+#### Create `backend/.env`
 
 ```env
 # Server
 PORT=5000
 
-# Database — get from neon.tech
+# Database — get free PostgreSQL from neon.tech
 DATABASE_URL="postgresql://user:pass@ep-xxx.neon.tech/examforge?sslmode=require"
 
-# JWT
-JWT_SECRET="generate-with: node -e \"console.log(require('crypto').randomBytes(64).toString('hex'))\""
+# JWT — generate with:
+# node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+JWT_SECRET=your_generated_secret_here
 JWT_EXPIRES_IN=8h
 
 # Frontend URL
 FRONTEND_URL=http://localhost:5173
 
-# Gmail SMTP — use App Password, not your real password
-# Enable 2FA on Gmail → Security → App Passwords → Generate
-GMAIL_USER=youremail@gmail.com
-GMAIL_PASS=your-16-char-app-password
+# Resend API — get from resend.com (see Step 5)
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxx
+SENDER_EMAIL=onboarding@resend.dev
 
-# Google OAuth — from console.cloud.google.com
+# Google OAuth — get from console.cloud.google.com (see Step 6)
 GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxx
 GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 
-# HuggingFace — from huggingface.co → Settings → Access Tokens
-HF_API_TOKEN=hf_xxxxxxxxxxxxxxxxxx
+# Groq API — get from console.groq.com (see Step 7)
+# Used for AI answer evaluation
+GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxx
+
+# Groq Extraction Key — used for image question extraction
+GROQ_EXTRACTION_KEY=gsk_xxxxxxxxxxxxxxxxxx
 ```
 
-Run database migrations:
+> Note: `GROQ_API_KEY` and `GROQ_EXTRACTION_KEY` can be the same Groq API key. They are separated in the codebase so you can use different keys or rate limit them independently.
+
+#### Run database migrations
 
 ```bash
 npx prisma migrate dev --name init
 npx prisma generate
 ```
 
-Start the backend:
+#### Start backend
 
 ```bash
 npm run dev
@@ -154,28 +230,28 @@ npm run dev
 
 ---
 
-### 3. Frontend Setup
+### Step 3 — Frontend Setup
 
 ```bash
 cd frontend
 npm install
 ```
 
-Create `frontend/.env`:
+#### Packages installed:
+```
+react react-dom react-router-dom
+axios zustand
+tailwindcss postcss autoprefixer
+face-api.js react-hot-toast
+```
+
+#### Create `frontend/.env`
 
 ```env
 VITE_API_URL=http://localhost:5000
 ```
 
-Download face-api.js model files into `frontend/public/models/`:
-
-Go to: https://github.com/justadudewhohacks/face-api.js/tree/master/weights
-
-Download these 2 files:
-- `tiny_face_detector_model-weights_manifest.json`
-- `tiny_face_detector_model-shard1`
-
-Start the frontend:
+#### Start frontend
 
 ```bash
 npm run dev
@@ -184,189 +260,217 @@ npm run dev
 
 ---
 
-### 4. Google OAuth Setup
+### Step 4 — Face Detection Model Files
+
+face-api.js requires 2 model files. Without them, face detection will not work.
+
+1. Go to: https://github.com/justadudewhohacks/face-api.js/tree/master/weights
+2. Download these 2 files:
+   - `tiny_face_detector_model-weights_manifest.json`
+   - `tiny_face_detector_model-shard1`
+3. Place both files in `frontend/public/models/`
+
+```
+frontend/public/models/
+├── tiny_face_detector_model-weights_manifest.json
+└── tiny_face_detector_model-shard1
+```
+
+---
+
+### Step 5 — Resend API (for OTP emails)
+
+1. Go to [resend.com](https://resend.com) and sign up free
+2. From the dashboard, go to **API Keys** and create a new key
+3. Copy the key and paste it as `RESEND_API_KEY` in `backend/.env`
+4. For `SENDER_EMAIL`, use `onboarding@resend.dev` for testing, or verify your own domain for production
+
+---
+
+### Step 6 — Google OAuth Setup
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create a project → APIs & Services → OAuth consent screen → External
-3. Credentials → Create OAuth 2.0 Client ID → Web application
-4. Authorized JavaScript origins:
+2. Create a new project named `ExamForge`
+3. Go to **APIs & Services → OAuth consent screen → External** → fill in app name and email
+4. Go to **Credentials → Create Credentials → OAuth 2.0 Client ID → Web application**
+5. Under **Authorized JavaScript origins** add:
    ```
    http://localhost:5000
    http://localhost:5173
    ```
-5. Authorized redirect URIs:
+6. Under **Authorized redirect URIs** add:
    ```
    http://localhost:5000/api/auth/google/callback
    ```
-6. Copy Client ID and Client Secret to `backend/.env`
+7. Click **Create** — copy the Client ID and Client Secret into `backend/.env`
+
+> To find the Client Secret later: go to Credentials → click the pencil icon on your OAuth client → scroll to Client secrets → click **Add Secret**.
 
 ---
 
-### 5. Gmail App Password Setup
+### Step 7 — Groq API (for AI scoring and question extraction)
 
-1. Go to your Google Account → Security
-2. Enable 2-Step Verification
-3. Security → App Passwords → Select "Mail" → Custom name "ExamForge"
-4. Copy the 16-character password to `GMAIL_PASS` in `backend/.env`
+1. Go to [console.groq.com](https://console.groq.com) and sign up free
+2. Go to **API Keys → Create API Key**
+3. Copy the key (starts with `gsk_...`)
+4. Paste the same key for both `GROQ_API_KEY` and `GROQ_EXTRACTION_KEY` in `backend/.env`
+
+Groq free tier is generous — fast inference with no billing required for development.
 
 ---
 
-## 🎯 How to Use
+## How to Use
 
-### As an Admin (Teacher)
+### Admin workflow
 
-1. **Register** with an `@iitr.ac.in` email — you'll be assigned the Admin role automatically
-2. **Create an exam** — add title, subject, duration, total marks
-3. **Add questions** — each question has question text, model answer (for AI scoring), and marks
-4. **Finalize** — generates a unique `EF-XXXXXX` exam code valid for 24 hours
-5. **Share** the code or shareable link with students
-6. **View Results** after students submit — AI scores appear automatically
-7. **Override scores** manually if needed
-8. **Export CSV** for grading records
+1. Register with an `@iitr.ac.in` email — auto-assigned Admin role
+2. Go to Admin Dashboard → click **+ New Exam**
+3. Fill in exam details and click **Create Exam**
+4. Add questions:
+   - Manually: type question, model answer, and marks
+   - Via image: upload a photo of a question paper — AI extracts all questions automatically
+5. Click **Finalize & Generate Code** when ready
+6. Copy the exam code or shareable link and send to students
+7. After students submit, open **View Results** to see scores
+8. Override any AI score manually, then export as CSV
 
-### As a Student
+### Student workflow
 
-1. **Register** with any non-`@iitr.ac.in` email
-2. **Enter exam code** on the student dashboard — or click the shareable link from your teacher
-3. **Complete the pre-exam checklist**:
-   - Grant camera + microphone access
+1. Register with any non-`@iitr.ac.in` email — auto-assigned Student role
+2. Enter the exam code on the Student Dashboard (or click the shareable link)
+3. Complete the pre-exam checklist:
+   - Click **Grant Access** for camera and microphone
    - Confirm single monitor
-   - Enable fullscreen
-   - Accept exam rules
-4. **Take the exam** — answers auto-save every 10 seconds
-5. **Use the whiteboard** for rough work (not submitted)
-6. **Submit** when done — camera turns off, scores calculated by AI
+   - Click **Enable Fullscreen**
+   - Read and accept exam rules
+4. Click **Start Exam**
+5. Answer all questions — answers save automatically
+6. Use the **Whiteboard** toggle for rough work
+7. Click **Submit Exam** when done
 
 ---
 
-## 🔒 Anti-Cheating Mechanisms
+## Deployment
 
-| Mechanism | How It Works |
-|---|---|
-| Fullscreen enforcement | Exam opens in fullscreen; exiting triggers a violation |
-| Tab switch detection | Page Visibility API detects any tab/window switch |
-| Copy-paste prevention | Ctrl+C, Ctrl+V, right-click disabled on question text |
-| Back navigation trap | Browser back button logs a violation instead of navigating |
-| Screenshot blur | PrintScreen key blurs the screen for 3 seconds |
-| DevTools detection | Window size monitoring detects DevTools opening |
-| Face absence | face-api.js checks every 5s; 20 cumulative seconds absent = 1 violation |
-| Multiple faces | Two or more faces in camera = instant violation |
-| Audio detection | Sustained speaking for 15s = violation |
-| Auto-submit | After 3 violations, exam submits automatically and is flagged |
-| Backend timer | Timer stored server-side — refreshing the page does not reset the timer |
+### Frontend — Vercel
 
----
+1. Push `frontend/` to GitHub
+2. Go to [vercel.com](https://vercel.com) → New Project → Import repo
+3. Framework: **Vite**
+4. Add environment variable:
+   ```
+   VITE_API_URL=https://your-backend.onrender.com
+   ```
+5. Deploy
 
-## 🤖 AI Answer Evaluation
+### Backend — Render
 
-ExamForge uses **semantic similarity** to score descriptive answers:
-
-1. After submission, each student answer is compared to the admin's model answer
-2. **Primary method**: HuggingFace `sentence-transformers/all-MiniLM-L6-v2` API (free tier)
-3. **Fallback**: TF-IDF cosine similarity (runs locally, no API needed)
-
-**Scoring thresholds:**
-| Similarity | Score |
-|---|---|
-| > 0.75 | Full marks |
-| 0.50 – 0.75 | `similarity × marks` |
-| < 0.50 | `similarity × marks × 0.5` |
-
-Evaluation runs in the background — students see their submitted screen immediately, scores appear in the admin dashboard within 10–30 seconds.
-
----
-
-## 🌐 Deployment
-
-### Frontend → Vercel
-
-```bash
-# Push frontend/ to GitHub
-# Go to vercel.com → New Project → Import repo
-# Set environment variable:
-VITE_API_URL=https://your-render-backend.onrender.com
-```
-
-### Backend → Render
-
-```bash
-# Push backend/ to GitHub
-# Go to render.com → New Web Service → Connect repo
-# Build command:
-npm install && npx prisma migrate deploy && npx prisma generate
-# Start command:
-node server.js
-# Add all .env variables in Render dashboard
-```
-
-### Database → Neon (already configured)
-
-Update `DATABASE_URL` in Render with your Neon production connection string.
+1. Push `backend/` to GitHub
+2. Go to [render.com](https://render.com) → New Web Service → Connect repo
+3. Build command:
+   ```
+   npm install && npx prisma migrate deploy && npx prisma generate
+   ```
+4. Start command:
+   ```
+   node server.js
+   ```
+5. Add all `.env` variables in the Environment tab
+6. Update these for production:
+   ```
+   FRONTEND_URL=https://your-app.vercel.app
+   GOOGLE_CALLBACK_URL=https://your-backend.onrender.com/api/auth/google/callback
+   ```
 
 ### Update Google OAuth for production
 
 Add to Authorized JavaScript origins:
 ```
 https://your-app.vercel.app
-https://your-api.onrender.com
+https://your-backend.onrender.com
 ```
 
 Add to Authorized redirect URIs:
 ```
-https://your-api.onrender.com/api/auth/google/callback
+https://your-backend.onrender.com/api/auth/google/callback
 ```
 
-Update `GOOGLE_CALLBACK_URL` and `FRONTEND_URL` in Render environment variables.
+### Keep backend warm
+
+Render free tier sleeps after 15 minutes of inactivity. Use [cron-job.org](https://cron-job.org) to ping your backend every 14 minutes:
+```
+https://your-backend.onrender.com/health
+```
 
 ---
 
-## 📊 Database Schema
-
-| Table | Purpose |
-|---|---|
-| `User` | Stores all users (admin + student) with role and auth provider |
-| `Exam` | Exam metadata — title, subject, duration, status |
-| `ExamCode` | Generated codes with 24hr expiry |
-| `Question` | Questions with model answers and marks |
-| `Submission` | Student exam sessions with violation count and status |
-| `Answer` | Student answers with AI scores and admin override scores |
-| `Violation` | Timestamped log of each violation event |
-| `Otp` | Hashed OTPs with expiry timestamps |
-
----
-
-## 🔑 Role Detection
+## Role Detection
 
 | Email Domain | Role | Dashboard |
 |---|---|---|
-| `@iitr.ac.in` | Admin | Exam management dashboard |
+| `@iitr.ac.in` | Admin | Exam management |
 | Any other domain | Student | Exam portal |
 
-To change the admin domain, update this line in `backend/src/controllers/authController.js`:
+To change the admin email domain, edit `backend/src/controllers/authController.js`:
+
 ```javascript
 const role = email.endsWith('@iitr.ac.in') ? 'admin' : 'student';
 ```
 
 ---
 
-## ⚠️ Known Limitations
+## Environment Variables Reference
 
-- Screenshot prevention is CSS-based — works as a deterrent, not a full block
-- Multiple monitor detection requires Chrome 100+ or Edge 100+ (`screen.isExtended`)
-- Face detection accuracy depends on lighting and camera quality
-- HuggingFace free tier has ~1000 requests/day limit — TF-IDF fallback activates automatically
-- Render free tier cold-starts after 15 minutes of inactivity — use [cron-job.org](https://cron-job.org) to keep it warm
+| Variable | Required | Description |
+|---|---|---|
+| `PORT` | Yes | Backend server port (default: 5000) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string from Neon |
+| `JWT_SECRET` | Yes | Random 64-char secret for JWT signing |
+| `JWT_EXPIRES_IN` | Yes | Token expiry duration (e.g. `8h`) |
+| `FRONTEND_URL` | Yes | Frontend origin for CORS and redirects |
+| `RESEND_API_KEY` | Yes | Resend API key for OTP email delivery |
+| `SENDER_EMAIL` | Yes | Verified sender email address |
+| `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret |
+| `GOOGLE_CALLBACK_URL` | Yes | Google OAuth redirect URL |
+| `GROQ_API_KEY` | Yes | Groq API key for AI answer evaluation |
+| `GROQ_EXTRACTION_KEY` | Yes | Groq API key for image question extraction |
 
 ---
 
-## 📄 License
+## Database Schema
 
-MIT License — free to use, modify, and distribute.
+| Table | Purpose |
+|---|---|
+| `User` | All users with role and auth provider |
+| `Exam` | Exam metadata — title, subject, duration, status |
+| `ExamCode` | Generated codes with 24hr expiry |
+| `Question` | Questions with model answers and marks |
+| `Submission` | Student exam sessions with status and violation count |
+| `Answer` | Student answers with AI scores and admin override scores |
+| `Violation` | Timestamped log of every violation event |
+| `Otp` | Hashed OTPs with 10-minute expiry |
 
 ---
 
-## 👤 Author
+## Known Limitations
 
-Built solo as a final project.
+- Screenshot prevention is CSS-based — a deterrent, not a guaranteed block
+- Multiple monitor detection uses `screen.isExtended` — Chrome 100+ and Edge 100+ only, not supported in Firefox
+- Face detection accuracy varies with lighting and camera quality
+- Groq free tier has rate limits — TF-IDF fallback activates automatically if the API is unavailable
+- Render free tier has cold starts — use cron-job.org to keep the backend warm
+
+---
+
+## License
+
+MIT License — free to use, modify, and distribute with attribution.
+
+---
+
+## Author
+
+Built solo as a final project submission.
 
 > ExamForge — because trust should be built in, not bolted on.
