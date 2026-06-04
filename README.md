@@ -51,7 +51,27 @@ Before running this project locally, ensure you have the following installed:
 ## ⚙️ Environment Variables
 
 Create a `.env` file in your root `/backend` folder and populate it with the following configurations. Ensure these matches are mirrored perfectly in your Render Dashboard:
+The Terminal Commands
+Run this first command in your /backend folder to install the main packages:
 
+Bash
+npm install express bcrypt jsonwebtoken @prisma/client cors dotenv
+Then, run this command to install the development tools:
+
+Bash
+npm install prisma nodemon --save-dev
+
+Prisma Client Setup
+Generate the Prisma client blueprints and sync them with your remote or local database:
+
+Bash
+npx prisma generate
+npx prisma db push
+
+Start the Server
+
+Bash
+npm run dev
 ```env
 # Server Configuration
 PORT=5000
