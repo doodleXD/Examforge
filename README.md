@@ -2,7 +2,7 @@
 
 A full-stack, AI-powered secure online examination platform with real-time proctoring, anti-cheating enforcement, and AI-powered answer evaluation and question extraction.
 
-**Live Demo:** [live link]
+**Live Demo:** [[live link](https://examforge-peach.vercel.app/)]
 
 ---
 
